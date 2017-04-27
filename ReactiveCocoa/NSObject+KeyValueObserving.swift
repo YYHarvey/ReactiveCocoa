@@ -52,6 +52,34 @@ extension Reactive where Base: NSObject {
 	}
 }
 
+extension Property {
+	/// Create a property that observes the given key path of the given object. The
+	/// generic type `Value` can be any Swift type that is Objective-C bridgeable.
+	///
+	/// - parameters:
+	///   - object: An object to be observed.
+	///   - keyPath: The key path to observe.
+	public convenience init(object: NSObject, keyPath: String) {
+		// `Property(_:)` caches the latest value of the `DynamicProperty`, so it is
+		// saved to be used even after `object` deinitializes.
+		self.init(DynamicProperty(object: object, keyPath: keyPath))
+	}
+}
+
+extension BindingTarget {
+	/// Create a binding target that sets the given key path of the given object. The
+	/// generic type `Value` can be any Swift type that is Objective-C bridgeable.
+	///
+	/// - parameters:
+	///   - object: An object to be observed.
+	///   - keyPath: The key path to set.
+	public init(object: NSObject, keyPath: String) {
+		self.init(lifetime: object.reactive.lifetime) { [weak object] value in
+			object?.setValue(value, forKey: keyPath)
+		}
+	}
+}
+
 internal final class KeyValueObserver: NSObject {
 	typealias Action = (_ object: AnyObject?) -> Void
 	private static let context = UnsafeMutableRawPointer.allocate(bytes: 1, alignedTo: 0)
